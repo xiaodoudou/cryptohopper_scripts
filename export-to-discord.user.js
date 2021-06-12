@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  try to take over the world!
-// @author       Xiaodoudou
+// @author       You
 // @match        https://www.cryptohopper.com/config
 // @icon         https://www.google.com/s2/favicons?domain=cryptohopper.com
 // @grant        GM_addStyle
@@ -97,7 +97,7 @@ Max open time sell: ${config.max_open_time}${config.sell_order_type == "limit" ?
 - Enable: ${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? "True" : "False"}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Trailing stop-loss percentage: ${config.stop_loss_trailing_percentage}` : ''}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Arm trailing stop-loss at: ${config.stop_loss_trailing_arm}` : ''}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Only sell with profit: ${config.trailing_stop_loss_profit && config.trailing_stop_loss_profit == "1" ? "True" : "False"}` : ""}
 
 ## Dollar Cost Averaging
-- Enable: ${config.auto_dca && config.auto_dca == "1" ? "True" : "False"}
+- Enable: ${config.auto_dca && config.auto_dca == "1" ? "True" : "False"}${config.auto_dca && config.auto_dca == "1" ? `\n- Order type: ${config.dca_order_type}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA after X time open: ${config.auto_dca_time}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA max retries: ${config.auto_dca_max}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA set percentage trigger: ${config.auto_dca_percentage}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA buy immediately: ${config.auto_dca_strategy && config.auto_dca_strategy == "1" ? "True" : "False"}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA order size: ${config.auto_dca_size}` : ''}${config.auto_dca && config.auto_dca == "1" && config.auto_dca_size && config.auto_dca_size == "custom" ? `\n- DCA order size percentage: ${confi.auto_dca_size_custom}` : ''}
 </pre>`,
             type: '',
         });
