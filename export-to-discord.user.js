@@ -39,19 +39,47 @@
     function addElements() {
         const target = '#sideConfigViewCol > div'
         jQuery(target).append(jQuery(`<h5 class="configSidebarTitle m-t-30">Export</h5>`));
-        jQuery(target).append(jQuery(`<ul class="nav nav-pills nav-stacked"><li class="viewtab ms-hover" id="export-discord"></li></ul>`));
-        const exportButton = jQuery('<a href="#"><i class="md md-vertical-align-bottom m-r-5"/> Export to Discord</a>');
-        exportButton.on('click', () => exportToText());
-        jQuery('#export-discord').append(exportButton);
+        jQuery(target).append(jQuery(`<ul class="nav nav-pills nav-stacked"><li class="viewtab ms-hover" id="export-config-discord"></li></ul>`));
+        jQuery(target).append(jQuery(`<ul class="nav nav-pills nav-stacked"><li class="viewtab ms-hover" id="export-coins-discord"></li></ul>`));
+        const exportConfigButton = jQuery('<a href="#"><i class="md md-vertical-align-bottom m-r-5"/> Export config to Discord</a>');
+        exportConfigButton.on('click', () => exportConfigToText());
+        jQuery('#export-config-discord').append(exportConfigButton);
+        const exportCoinsButton = jQuery('<a href="#"><i class="md md-vertical-align-bottom m-r-5"/> Export coins to Discord</a>');
+        exportCoinsButton.on('click', () => exportCoinsToText());
+        jQuery('#export-coins-discord').append(exportCoinsButton);
     };
 
-    function exportToText() {
-        const configQuery = $("form#configForm").serialize()
-        const config = queryStringToJSON(configQuery)
+        function exportCoinsToText() {
+        const configQuery = $("form#configForm").serialize();
+        const config = queryStringToJSON(configQuery);
+        const selectedCurrency = $("#collect_currency option[selected]").text();
         const strategyName = $("#s2id_strategy #select2-chosen-1").text()
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         const today  = new Date();
-        console.log(config)
+        swal({
+            title: 'Export',
+            html: `<pre>
+--------
+${strategyName}
+--------
+
+## Updated time: ${today.toLocaleDateString("en-US", options)}
+
+# Base currency: ${selectedCurrency}
+# Coins:
+${config['allowed_coins%5B%5D'].join(", ")}
+</pre>`,
+            type: '',
+        });
+    };
+
+    function exportConfigToText() {
+        const configQuery = $("form#configForm").serialize();
+        const config = queryStringToJSON(configQuery);
+        const strategyName = $("#s2id_strategy #select2-chosen-1").text();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const today  = new Date();
+        //console.log(config);
         swal({
             title: 'Export',
             html: `<pre>
