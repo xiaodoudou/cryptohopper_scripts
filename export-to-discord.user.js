@@ -39,8 +39,7 @@
     function addElements() {
         const target = '#sideConfigViewCol > div'
         jQuery(target).append(jQuery(`<h5 class="configSidebarTitle m-t-30">Export</h5>`));
-        jQuery(target).append(jQuery(`<ul class="nav nav-pills nav-stacked"><li class="viewtab ms-hover" id="export-config-discord"></li></ul>`));
-        jQuery(target).append(jQuery(`<ul class="nav nav-pills nav-stacked"><li class="viewtab ms-hover" id="export-coins-discord"></li></ul>`));
+        jQuery(target).append(jQuery(`<ul class="nav nav-pills nav-stacked"><li class="viewtab ms-hover" id="export-config-discord"></li><li class="viewtab ms-hover" id="export-coins-discord"></li></ul>`));
         const exportConfigButton = jQuery('<a href="#"><i class="md md-vertical-align-bottom m-r-5"/> Export config to Discord</a>');
         exportConfigButton.on('click', () => exportConfigToText());
         jQuery('#export-config-discord').append(exportConfigButton);
