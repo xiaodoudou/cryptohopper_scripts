@@ -89,12 +89,16 @@ Max open time sell: ${config.max_open_time}${config.sell_order_type == "limit" ?
 
 ## Sell Strategy
 - Sell based on strategy: ${config.sell_with_strategy && config.sell_with_strategy == "1" ? "True" : "False"}
+- Hold assets when new target is the same: ${config.hold_assets && config.hold_assets == "1" ? "True" : "False"}
 
 ## Stop-loss
 - Enable: ${config.stop_loss && config.stop_loss == "1" ? "True" : "False"}${config.stop_loss == "1" ? `\n - Stop-loss percentage: ${config.stop_loss_percentage}` : ''}
 
 ## Trailing stop-loss:
-- Enable: ${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? "True" : "False"}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Trailing stop-loss percentage: ${config.stop_loss_trailing_percentage}` : ''}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Arm trailing stop-loss at: ${config.stop_loss_trailing_arm}` : ''}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Only sell with profit: ${config.trailing_stop_loss_profit && config.trailing_stop_loss_profit == "1" ? "True" : "False"}` : ""}
+- Enable: ${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? "True" : "False"}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Trailing stop-loss percentage: ${config.stop_loss_trailing_percentage}` : ''}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Arm trailing stop-loss at: ${config.stop_loss_trailing_arm}` : ''}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Use trailing stop-loss only: ${config.stop_loss_trailing_only && config.stop_loss_trailing_only== "1" ? "True" : "False"}` : ""}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Reset stop-loss after failed orders : ${config.trailing_stop_loss_reset && config.trailing_stop_loss_reset== "1" ? "True" : "False"}` : ""}${config.stop_loss_trailing && config.stop_loss_trailing == "1" ? `\n- Only sell with profit: ${config.trailing_stop_loss_profit && config.trailing_stop_loss_profit == "1" ? "True" : "False"}` : ""}
+
+## Auto Close
+- Enable: ${config.auto_close_positions && config.auto_close_positions == "1" ? "True" : "False"}${config.auto_close_positions && config.auto_close_positions == "1" ? `\n- Close positions after X time open: ${config.auto_close_positions_time}` : ''}
 
 ## Dollar Cost Averaging
 - Enable: ${config.auto_dca && config.auto_dca == "1" ? "True" : "False"}${config.auto_dca && config.auto_dca == "1" ? `\n- Order type: ${config.dca_order_type}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA after X time open: ${config.auto_dca_time}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA max retries: ${config.auto_dca_max}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA set percentage trigger: ${config.auto_dca_percentage}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA buy immediately: ${config.auto_dca_strategy && config.auto_dca_strategy == "1" ? "True" : "False"}` : ''}${config.auto_dca && config.auto_dca == "1" ? `\n- DCA order size: ${config.auto_dca_size}` : ''}${config.auto_dca && config.auto_dca == "1" && config.auto_dca_size && config.auto_dca_size == "custom" ? `\n- DCA order size percentage: ${confi.auto_dca_size_custom}` : ''}
