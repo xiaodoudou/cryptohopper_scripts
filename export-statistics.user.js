@@ -81,7 +81,7 @@
                     const buyTrade = _.get(sellTrade, 'buyTrade', false)
                     if (buyTrade !== false) {
                         sellTrade.totalFee = Number(sellTrade.fee) + Number(buyTrade.fee)
-                        sellTrade.profit = Number(sellTrade.orderValue) - Number(buyTrade.orderValue) - sellTrade.totalFee
+                        sellTrade.profit = Number(sellTrade.orderValue)
                         statistics.trades = statistics.trades + 1
                         statistics.profit = statistics.profit + sellTrade.profit
                         statistics.fees = statistics.trades + sellTrade.totalFee
