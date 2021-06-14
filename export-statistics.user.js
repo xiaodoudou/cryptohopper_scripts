@@ -8,6 +8,7 @@
 // @icon         https://www.google.com/s2/favicons?domain=cryptohopper.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
 // @require      https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.2.0/dom-to-image.min.js
 // @grant        GM_addStyle
 // ==/UserScript==
 (function() {
@@ -39,7 +40,11 @@
                     const obj = {}
                     const currentline = lines[i].split(",")
                     for(let j = 0 ; j < headers.length ; j++) {
-                        obj[headers[j]] = currentline[j]
+                        try {
+                            obj[headers[j]] = JSON.parse(currentline[j])
+                        } catch (e) {
+                            obj[headers[j]] = currentline[j]
+                        }
                     }
                     result.push(obj)
                 }
@@ -57,7 +62,11 @@
                 this.loading = true
                 const statistics = {
                     trades: 0,
-                    profit: 0
+                    profit: 0,
+                    fees: 0,
+                    wins: 0,
+                    loss: 0,
+                    data: []
                 }
                 this.setLabel(this.labelLoading)
                 const data = await this.getHistory()
@@ -71,11 +80,21 @@
                 _.forEach(sellTrades, (sellTrade) => {
                     const buyTrade = _.get(sellTrade, 'buyTrade', false)
                     if (buyTrade !== false) {
-                        const profit = Number(sellTrade.orderValue) - Number(buyTrade.orderValue) - Number(sellTrade.fee) - Number(buyTrade.fee)
+                        sellTrade.totalFee = Number(sellTrade.fee) + Number(buyTrade.fee)
+                        sellTrade.profit = Number(sellTrade.orderValue) - Number(buyTrade.orderValue) - sellTrade.totalFee
                         statistics.trades = statistics.trades + 1
-                        statistics.profit = statistics.profit + profit
+                        statistics.profit = statistics.profit + sellTrade.profit
+                        statistics.fees = statistics.trades + sellTrade.totalFee
+                        if (sellTrade.result.search("-") >= 0) {
+                            statistics.loss = statistics.loss + 1
+                        } else {
+                            statistics.wins = statistics.wins + 1
+                        }
+                        statistics.data.push(sellTrade)
                     }
                 })
+                statistics.data = _.orderBy(statistics.data, ['date'])
+                statistics.data.reverse()
                 this.displayStatistics(statistics)
             } catch (error) {
                 this.displayError(error)
@@ -89,16 +108,70 @@
         }
 
         displayStatistics(statistics) {
-            console.log(statistics)
+            const dateRange = jQuery("#export-statistics-daterange").val()
+            const template = _.template(`
+                <% for (trade of statistics.data) { %>
+                    <tr class="row">
+                        <td class="coin"><%= trade.currency %></td>
+                        <td class="sell-date"><%= trade.date %></td>
+                        <td class="buy-date"><%= trade.buyTrade.date %></td>
+                        <td class="trigger"><%= trade.trigger %></td>
+                        <td class="profit <%= trade.profit > 0 ? 'positive' : 'negative' %>"><%= roundFinance(trade.profit) %>$</td>
+                        <td class="result <%= trade.result.search('-') > -1 ? 'negative' : 'positive' %>"><%= trade.result %></td>
+                    </tr>
+                <% } %>
+            `)
             swal({
                 title:  'Statistics',
-                html:   `<div>
-                            <span>Trades:</span> ${statistics.trades}
-                        </div>
-                        <div>
-                            <span>Profit:</span> ${this.roundFinance(statistics.profit)}
+                width: '50%',
+                html:   `<div id="modal-statistics">
+                            <div class="statistics-sumup">
+                                <div class="row">
+                                    <div>
+                                        <span>Date Range:</span> ${dateRange} (Timezone ${timezoneOffset()})
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div>
+                                        <span class="label label-primary">Trades:</span> ${statistics.trades}
+                                    </div>
+                                    <div>
+                                        <span class="label label-primary">Profit:</span> <span class="${statistics.profit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.profit)}$</span>
+                                    </div>
+                                    <div>
+                                        <span class="label label-success">Wins:</span> ${statistics.wins}
+                                    </div>
+                                    <div>
+                                        <span class="label label-danger">Loss:</span> ${statistics.loss}
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="statistics">
+                                <thead>
+                                    <tr class="row">
+                                        <th class="coin">Coin</th>
+                                        <th class="sell">Sell At</th>
+                                        <th class="buy">Buy At</th>
+                                        <th class="triger">Trigger</th>
+                                        <th class="profit">Profit</th>
+                                        <th class="result">Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${template({ statistics, roundFinance: this.roundFinance })}
+                                </tbobdy>
+                            </table>
                         </div>`
                 });
+                if ($("#statistics-save-to-png").is(':checked')) {
+                    domtoimage.toPng(jQuery('#modal-statistics').parent().parent()[0])
+                    .then(function (dataUrl) {
+                        const link = document.createElement('a');
+                        link.download = +new Date() + '-modal-statistics.png',
+                        link.href = dataUrl;
+                        link.click()
+                    })
+                }
         }
 
         displayError(error) {
@@ -128,6 +201,17 @@
                                             </h3>
                                             <hr>
                                             <div class="form-horizontal">
+                                                <div class="form-group">
+                                                    <label class="col-md-2 control-label">Save as PNG:</label>
+                                                    <div class="col-md-9">
+                                                        <div class="checkbox checkbox-primary">
+                                                            <input id="statistics-save-to-png" type="checkbox" checked="true">
+                                                            <label for="statistics-save-to-png">
+                                                                Enabled
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 <div class="form-group">
                                                     <label class="col-md-2 control-label">Date range:</label>
                                                     <div class="col-md-9">
@@ -161,5 +245,59 @@
         }
 
     }
+    jQuery(() => {
+        GM_addStyle(`
+        #modal-statistics {
+            background: white;
+            position: relative;
+            padding: 0 0 10px 0;
+        }
+        div.statistics-sumup {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            flex-direction: column;
+            justify-content: space-around;
+            font-size: 12px;
+        }
+        div.statistics-sumup .row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+         {
+            font-weight: bold;
+        }
+        table.statistics {
+            background: #303054;
+            width: 100%;
+        }
+        table.statistics td, table.statistics th {
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            padding: 0 6px 0 6px;
+        }
+        div.statistics-sumup div span.positive,
+        table.statistics td.positive {
+            color: #00b19d;
+        }
+        div.statistics-sumup div span.negative,
+        table.statistics td.negative {
+            color: #ef5350;
+        }
+        table.statistics .buy-date,
+        table.statistics .sell-date,
+        table.statistics .trigger,
+        table.statistics .coin {
+            text-align: left;
+        }
+        table.statistics .profit,
+        table.statistics .result {
+            text-align: right;
+        }
+        `);
+    });
     jQuery(document).ready(() => new TradeHistoryStatistics());
   })();
