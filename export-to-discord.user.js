@@ -190,15 +190,18 @@
                     + `<% } %>`
                     + `<% if (config.ai) { %>`
                         + `\n- AI Config:`
-                        + `\n - Validate signals after X time: <%= config.ai.validate_signals_after_time %>`
-                        + `\n - Minimum percent change buy signal: <%= config.ai.minimum_percent_change_buy %>`
-                        + `\n - Minimum percent change sell signal: <%= config.ai.minimum_percent_change_sell %>`
-                        + `\n - Maximum percent change neutral trend: <%= config.ai.maximum_percent_change_trend %>`
-                        + `\n - Minimum percent change uptrend: <%= config.ai.minimum_percent_change_trend_up %>`
-                        + `\n - Minimum percent change downtrend: <%= config.ai.minimum_percent_change_trend_down %>`
-                        + `\n - Moving average for trend: <%= config.ai.market_trend_evaluation_ma %>`
-                        + `\n - Moving average period: <%= config.ai.market_trend_evaluation_ma_period %>`
-                        + `\n - Maximum score for neutral signals: <%= config.ai.maximum_neutral_factor %>`
+                        + `\n - Buy/Sell signal settings:`
+                        + `\n  - Validate signals after X time: <%= config.ai.validate_signals_after_time %>`
+                        + `\n  - Minimum percent change buy signal: <%= config.ai.minimum_percent_change_buy %>`
+                        + `\n  - Minimum percent change sell signal: <%= config.ai.minimum_percent_change_sell %>`
+                        + `\n - Market trend settings:`
+                        + `\n  - Maximum percent change neutral trend: <%= config.ai.maximum_percent_change_trend %>`
+                        + `\n  - Minimum percent change uptrend: <%= config.ai.minimum_percent_change_trend_up %>`
+                        + `\n  - Minimum percent change downtrend: <%= config.ai.minimum_percent_change_trend_down %>`
+                        + `\n  - Moving average for trend: <%= config.ai.market_trend_evaluation_ma %>`
+                        + `\n  - Moving average period: <%= config.ai.market_trend_evaluation_ma_period %>`
+                        + `\n - Other settings:`
+                        + `\n  - Maximum score for neutral signals: <%= config.ai.maximum_neutral_factor %>`
                         + `\n - Source:`
                         + `<% for (const source of config.ai.sources) { %>`
                             + `\n  - <%= source.type %>: <%= source.name %>`
