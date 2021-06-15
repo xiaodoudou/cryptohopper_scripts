@@ -43,8 +43,29 @@
             return JSON.parse(JSON.stringify(result))
         }
 
-        getAiConfig() {
-            //https://www.cryptohopper.com/strategies?edit_ai_id=26063
+        async getAiConfig(name) {
+            try {
+                if (name.search("ai_") < 0) {
+                    return {}
+                } 
+                const strategyId = name.substr(3)
+                const { data } = await axios.get(`https://www.cryptohopper.com/strategies?edit_ai_id=${strategyId}`)
+                const pageData = jQuery(data)
+                const strategyAI = {
+                    validate_signals_after_time: pageData.find("#validate_signals_after_time option[selected]").text(), // Validate signals after X time 
+                    minimum_percent_change_buy: pageData.find("#minimum_percent_change_buy").val(), //Minimum percent change buy signal 
+                    minimum_percent_change_sell: pageData.find("#minimum_percent_change_sell").val(), //Minimum percent change sell signal 
+                    maximum_percent_change_trend: pageData.find("#maximum_percent_change_trend").val(), //Maximum percent change neutral trend 
+                    minimum_percent_change_trend_up: pageData.find("#minimum_percent_change_trend_up").val(), //Minimum percent change uptrend 
+                    minimum_percent_change_trend_down: pageData.find("#minimum_percent_change_trend_down").val(), //Minimum percent change downtrend 
+                    market_trend_evaluation_ma: pageData.find("#market_trend_evaluation_ma option[selected]").text(), //Moving average for trend 
+                    market_trend_evaluation_ma_period: pageData.find("#market_trend_evaluation_ma_period").val(), //Moving average period 
+                    maximum_neutral_factor: pageData.find("#maximum_neutral_factor").val() //Maximum score for neutral signals 
+                }
+                return strategyAI
+            } catch (error) {
+                return {}
+            }
         }
 
         addElements() {
@@ -91,143 +112,171 @@
         }
 
               
-        exportConfigToText() {
-            const configQuery = $("form#configForm").serialize()
-            const config = this.queryStringToJSON(configQuery)
-            const strategyName = $("#s2id_strategy #select2-chosen-1").text()
-            const options = { year: 'numeric', month: 'long', day: 'numeric' }
-            const today  = new Date()
-            console.log(config)
-            const template = _.template(
-                `<pre>`
-                + `----------------`
-                + `\n${strategyName}`
-                + `\n----------------`
-                + `\n`
-                + `\n# Version XXX`
-                + `\n## Updated time: <%= today.toLocaleDateString("en-US", options) %>`
-                + `\n`
-                + `\n# Buying`
-                + `\n`
-                + `\n## Buy Settings`
-                + `\n- Order Type: <%= config.buy_order_type %>`
-                + `<% if (config.buy_order_type == 'limit') { %>`
-                    + `\n- Percentage bid: <%= config.bid_percentage %> / <%= config.bid_percentage_type %>`
-                + `<% } %>`
-                + `\n- Max open time buy: <%= config.max_open_time_buy %>`
-                + `\n- Max Open position: <%= config.max_open_positions %>`
-                + `\n- Max percentage open positions per coin: <%= config.max_open_positions_per_coin %>`
-                + `\n- Enable cooldown: <%= config.cooldown && config.cooldown == "1" ? "True" : "False" %>`
-                + `<% if (config.cooldown && config.cooldown == "1") { %>`
-                    + `\n- Cooldown when: <%= config.cooldown_when %>`
-                    + `\n- Cooldown period: <%= config.cooldown_count %> / <%= config.cooldown_val %>`
-                + `<% } %>`
-                + `\n- Only 1 open buy per coin: <%= config.one_open_order && config.one_open_order == "1" ? "True" : "False" %>`
-                + `\n- Only buy when there are positive pairs: <%= config.only_when_positive && config.only_when_positive == "1" ? "True" : "False" %>`
-                + `<% if (config.only_when_positive && config.only_when_positive == "1") { %>`
-                    + `\n- Positive pairs timeframe: <%= config.only_when_positive_time %> Minutes`
-                + `<% } %>`
-                + `\n- Auto merge positions: <%= config.auto_merge_positions && config.auto_merge_positions == "1" ? "True" : "False" %>`
-                + `\n`
-                + `\n## Strategy:`
-                + `\n- Strategy: <%= strategyName %>`
-                + `\n- Number of targets to buy: <%= config.num_targets_per_buy %>`
-                + `<% if (config.strategy && config.strategy.search("ai_") >= 0) { %>`
-                    + `\n- Use corrected score for buys: <%= config.buy_score_corrected && config.buy_score_corrected == "1" ? "True" : "False" %>`
-                    + `\n- Minimum score for buys: <%= config.min_buy_score %>`
-                    + `\n- Use corrected score for sells: <%= config.sell_score_corrected && config.sell_score_corrected == "1" ? "True" : "False" %>`
-                    + `\n- Minimum score for sells: <%= config.min_sell_score %>`
-                + `<% } %>`
-                + `\n`
-                + `\n## Trailing stop-buy`
-                + `\n- Enable: <%= config.trailing_buy == "1" ? "True" : "False" %>`
-                + `<% if (config.trailing_buy && trailing_buy.cooldown == "1") { %>`
-                    + `\n- Trailing stop-buy percentage: <%= config.trailing_buy_percentage %>`
-                + `<% } %>`
-                + `\n`
-                + `\n# Selling`
-                + `\n## Sell Settings`
-                + `\nTake profit at: <%= config.set_percentage %>`
-                + `\nOrder type: <%= config.sell_order_type %>`
-                + `\nMax open time sell: <%= config.max_open_time %>`
-                + `<% if (config.sell_order_type == "limit") { %>`
-                    + `\n- Percentage ask : <%= config.ask_percentage %> / <%= config.ask_percentage_type %>`
-                + `<% } %>`
-                + `\n`
-                + `\n## Sell Strategy`
-                + `\n- Sell based on strategy: <%= config.sell_with_strategy && config.sell_with_strategy == "1" ? "True" : "False" %>`
-                + `\n- Hold assets when new target is the same: <%= config.hold_assets && config.hold_assets == "1" ? "True" : "False" %>`
-                + `\n`
-                + `\n## Stop-loss`
-                + `\n- Enable: <%= config.stop_loss && config.stop_loss == "1" ? "True" : "False" %>`
-                + `<% if (config.stop_loss && config.stop_loss == "1") { %>`
-                    + `\n- Stop-loss percentage: <%= config.stop_loss_percentage %>`
-                + `<% } %>`
-                + `\n`
-                + `\n## Trailing stop-loss:`
-                + `\n- Enable: <%= config.stop_loss_trailing && config.stop_loss_trailing == "1" ? "True" : "False" %>`
-                + `<% if (config.stop_loss_trailing && config.stop_loss_trailing == "1") { %>`
-                    + `\n- Trailing stop-loss percentage: <%= config.stop_loss_trailing_percentage %>`
-                    + `\n- Arm trailing stop-loss at: <%= config.stop_loss_trailing_arm %>`
-                    + `\n- Use trailing stop-loss only: <%= config.stop_loss_trailing_only && config.stop_loss_trailing_only== "1" ? "True" : "False" %>`
-                    + `\n- Reset stop-loss after failed orders : <%= config.trailing_stop_loss_reset && config.trailing_stop_loss_reset== "1" ? "True" : "False" %>`
-                    + `\n- Only sell with profit: <%= config.trailing_stop_loss_profit && config.trailing_stop_loss_profit == "1" ? "True" : "False" %>`
-                + `<% } %>`
-                + `\n`
-                + `\n## Auto Close`
-                + `\n- Enable: <%= config.auto_close_positions && config.auto_close_positions == "1" ? "True" : "False" %>`
-                + `<% if (config.auto_close_positions && config.auto_close_positions == "1") { %>`
-                    + `\n- Close positions after X time open: <%= config.auto_close_positions_time %>`
-                + `<% } %>`
-                + `\n`
-                + `\n## Shorting`
-                + `\n- Reset position after closed short: <%= config.short_reset_position && config.short_reset_position == "1" ? "True" : "False" %>`
-                + `\n- Restore position after short: <%= config.short_restore_position && config.short_restore_position == "1" ? "True" : "False" %>`
-                + `\n- Automatic shorting: <%= config.automatic_shorting && config.automatic_shorting == "1" ? "True" : "False" %>`
-                + `<% if (config.automatic_shorting && config.automatic_shorting == "1") { %>`
-                    + `\n- Max open short positions: <%= config.max_open_short_positions %>`
-                    + `\n- Open short based on strategy: <%= config.short_sell_with_strategy && config.short_sell_with_strategy == "1" ? "True" : "False" %>`
-                    + `\n- Close short based on strategy: <%= config.short_buy_with_strategy && config.short_buy_with_strategy == "1" ? "True" : "False" %>`
-                    + `\n- Always short instead of sell: <%= config.short_always && config.short_always == "1" ? "True" : "False" %>`
-                    + `\n- Shorting percentage profit: <%= config.short_percentage_profit %>`
-                    + `\n- Use actual profit: <%= config.short_use_actual_profit && config.short_use_actual_profit == "1" ? "True" : "False" %>`
-                    + `\n- Trailing stop-short: <%= config.short_stop_loss_trailing && config.short_stop_loss_trailing == "1" ? "True" : "False" %>`
-                + `<% if (config.short_stop_loss_trailing && config.short_stop_loss_trailing == "1") { %>`
-                    + `\n- Trailing stop-short percentage: <%= config.short_stop_loss_trailing_percentage %>`
-                    + `\n- Arm trailing stop-short at: <%= config.short_stop_loss_trailing_arm %>`
-                    + `\n- Use trailing stop-short only: <%= config.short_stop_loss_trailing_only && config.short_stop_loss_trailing_only == "1" ? "True" : "False" %>`
-                + `<% } %>`
-                + `\n- Auto close shorts within time: <%= config.short_auto_close_positions && config.short_auto_close_positions == "1" ? "True" : "False" %>`
-                + `<% if (config.short_auto_close_positions && config.short_auto_close_positions == "1") { %>`
-                    + `\n- Close shorts after X time open: <%= config.short_auto_close_positions_time %>`
-                + `<% } %>`
-                + `\n- Auto remove shorts within time: <%= config.short_auto_remove_positions && config.short_auto_remove_positions == "1" ? "True" : "False" %>`
-                + `<% if (config.short_auto_close_positions && config.short_auto_close_positions == "1") { %>`
-                    + `\n- Remove shorts after X time open: <%= config.short_auto_remove_positions_time %>`
-                + `<% } %>`
-                + `\n- Do not buy back on loss: <%= config.short_remove_on_loss && config.short_remove_on_loss == "1" ? "True" : "False" %>`
-                + `\n- Ignore max open positions: <%= config.short_ignore_max_pos && config.short_ignore_max_pos == "1" ? "True" : "False" %>`
-                + `<% } %>`
-                + `\n`
-                + `\n## Dollar Cost Averaging`
-                + `\n- Enable: <%= config.auto_dca && config.auto_dca == "1" ? "True" : "False" %>`
-                + `<% if (config.auto_dca && config.auto_dca == "1") { %>`
-                    + `\n- Order type: <%= config.dca_order_type %>`
-                    + `\n- DCA after X time open: <%= config.auto_dca_time %>`
-                    + `\n- DCA max retries: <%= config.auto_dca_max %>`
-                    + `\n- DCA set percentage trigger: <%= config.auto_dca_percentage %>`
-                    + `\n- DCA buy immediately: <%= config.auto_dca_strategy && config.auto_dca_strategy == "1" ? "True" : "False" %>`
-                    + `\n- DCA order size: <%= config.auto_dca_size %>`
-                    + `<% if (config.auto_dca_size && config.auto_dca_size == "custom") { %>`
-                        + `\n- DCA order size percentage: <%= config.auto_dca_size_custom %>`
+        async exportConfigToText() {
+            try {
+                const configQuery = $("form#configForm").serialize()
+                const config = this.queryStringToJSON(configQuery)
+                const strategyName = $("#s2id_strategy #select2-chosen-1").text()
+                const options = { year: 'numeric', month: 'long', day: 'numeric' }
+                const today  = new Date()
+                console.log(config)
+                const aiConfig = await this.getAiConfig(config.strategy)
+                if (!_.isEmpty(aiConfig)) {
+                    config.ai = aiConfig
+                }
+                const template = _.template(
+                    `<pre>`
+                    + `----------------`
+                    + `\n${strategyName}`
+                    + `\n----------------`
+                    + `\n`
+                    + `\n# Version XXX`
+                    + `\n## Updated time: <%= today.toLocaleDateString("en-US", options) %>`
+                    + `\n`
+                    + `\n# Buying`
+                    + `\n`
+                    + `\n## Buy Settings`
+                    + `\n- Order Type: <%= config.buy_order_type %>`
+                    + `<% if (config.buy_order_type == 'limit') { %>`
+                        + `\n- Percentage bid: <%= config.bid_percentage %> / <%= config.bid_percentage_type %>`
                     + `<% } %>`
-                + `<% } %>`
-                + `</pre>`)
+                    + `\n- Max open time buy: <%= config.max_open_time_buy %>`
+                    + `\n- Max Open position: <%= config.max_open_positions %>`
+                    + `\n- Max percentage open positions per coin: <%= config.max_open_positions_per_coin %>`
+                    + `\n- Enable cooldown: <%= config.cooldown && config.cooldown == "1" ? "True" : "False" %>`
+                    + `<% if (config.cooldown && config.cooldown == "1") { %>`
+                        + `\n- Cooldown when: <%= config.cooldown_when %>`
+                        + `\n- Cooldown period: <%= config.cooldown_count %> / <%= config.cooldown_val %>`
+                    + `<% } %>`
+                    + `\n- Only 1 open buy per coin: <%= config.one_open_order && config.one_open_order == "1" ? "True" : "False" %>`
+                    + `\n- Only buy when there are positive pairs: <%= config.only_when_positive && config.only_when_positive == "1" ? "True" : "False" %>`
+                    + `<% if (config.only_when_positive && config.only_when_positive == "1") { %>`
+                        + `\n- Positive pairs timeframe: <%= config.only_when_positive_time %> Minutes`
+                    + `<% } %>`
+                    + `\n- Auto merge positions: <%= config.auto_merge_positions && config.auto_merge_positions == "1" ? "True" : "False" %>`
+                    + `\n`
+                    + `\n## Strategy:`
+                    + `\n- Strategy: <%= strategyName %>`
+                    + `\n- Number of targets to buy: <%= config.num_targets_per_buy %>`
+                    + `<% if (config.strategy && config.strategy.search("ai_") >= 0) { %>`
+                        + `\n- Use corrected score for buys: <%= config.buy_score_corrected && config.buy_score_corrected == "1" ? "True" : "False" %>`
+                        + `\n- Minimum score for buys: <%= config.min_buy_score %>`
+                        + `\n- Use corrected score for sells: <%= config.sell_score_corrected && config.sell_score_corrected == "1" ? "True" : "False" %>`
+                        + `\n- Minimum score for sells: <%= config.min_sell_score %>`
+                    + `<% } %>`
+                    + `<% if (config.ai) { %>`
+                    + `\n\n### AI Config:`
+                    + `\n- Validate signals after X time: <%= config.ai.validate_signals_after_time %>`
+                    + `\n- Minimum percent change buy signal: <%= config.ai.minimum_percent_change_buy %>`
+                    + `\n- Minimum percent change sell signal: <%= config.ai.minimum_percent_change_sell %>`
+                    + `\n- Maximum percent change neutral trend: <%= config.ai.maximum_percent_change_trend %>`
+                    + `\n- Minimum percent change uptrend: <%= config.ai.minimum_percent_change_trend_up %>`
+                    + `\n- Minimum percent change downtrend: <%= config.ai.minimum_percent_change_trend_down %>`
+                    + `\n- Moving average for trend: <%= config.ai.market_trend_evaluation_ma %>`
+                    + `\n- Moving average period: <%= config.ai.market_trend_evaluation_ma_period %>`
+                    + `\n- Maximum score for neutral signals: <%= config.ai.maximum_neutral_factor %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n## Trailing stop-buy`
+                    + `\n- Enable: <%= config.trailing_buy == "1" ? "True" : "False" %>`
+                    + `<% if (config.trailing_buy && trailing_buy.cooldown == "1") { %>`
+                        + `\n- Trailing stop-buy percentage: <%= config.trailing_buy_percentage %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n# Selling`
+                    + `\n## Sell Settings`
+                    + `\nTake profit at: <%= config.set_percentage %>`
+                    + `\nOrder type: <%= config.sell_order_type %>`
+                    + `\nMax open time sell: <%= config.max_open_time %>`
+                    + `<% if (config.sell_order_type == "limit") { %>`
+                        + `\n- Percentage ask : <%= config.ask_percentage %> / <%= config.ask_percentage_type %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n## Sell Strategy`
+                    + `\n- Sell based on strategy: <%= config.sell_with_strategy && config.sell_with_strategy == "1" ? "True" : "False" %>`
+                    + `\n- Hold assets when new target is the same: <%= config.hold_assets && config.hold_assets == "1" ? "True" : "False" %>`
+                    + `\n`
+                    + `\n## Stop-loss`
+                    + `\n- Enable: <%= config.stop_loss && config.stop_loss == "1" ? "True" : "False" %>`
+                    + `<% if (config.stop_loss && config.stop_loss == "1") { %>`
+                        + `\n- Stop-loss percentage: <%= config.stop_loss_percentage %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n## Trailing stop-loss:`
+                    + `\n- Enable: <%= config.stop_loss_trailing && config.stop_loss_trailing == "1" ? "True" : "False" %>`
+                    + `<% if (config.stop_loss_trailing && config.stop_loss_trailing == "1") { %>`
+                        + `\n- Trailing stop-loss percentage: <%= config.stop_loss_trailing_percentage %>`
+                        + `\n- Arm trailing stop-loss at: <%= config.stop_loss_trailing_arm %>`
+                        + `\n- Use trailing stop-loss only: <%= config.stop_loss_trailing_only && config.stop_loss_trailing_only== "1" ? "True" : "False" %>`
+                        + `\n- Reset stop-loss after failed orders : <%= config.trailing_stop_loss_reset && config.trailing_stop_loss_reset== "1" ? "True" : "False" %>`
+                        + `\n- Only sell with profit: <%= config.trailing_stop_loss_profit && config.trailing_stop_loss_profit == "1" ? "True" : "False" %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n## Auto Close`
+                    + `\n- Enable: <%= config.auto_close_positions && config.auto_close_positions == "1" ? "True" : "False" %>`
+                    + `<% if (config.auto_close_positions && config.auto_close_positions == "1") { %>`
+                        + `\n- Close positions after X time open: <%= config.auto_close_positions_time %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n## Shorting`
+                    + `\n- Reset position after closed short: <%= config.short_reset_position && config.short_reset_position == "1" ? "True" : "False" %>`
+                    + `\n- Restore position after short: <%= config.short_restore_position && config.short_restore_position == "1" ? "True" : "False" %>`
+                    + `\n- Automatic shorting: <%= config.automatic_shorting && config.automatic_shorting == "1" ? "True" : "False" %>`
+                    + `<% if (config.automatic_shorting && config.automatic_shorting == "1") { %>`
+                        + `\n- Max open short positions: <%= config.max_open_short_positions %>`
+                        + `\n- Open short based on strategy: <%= config.short_sell_with_strategy && config.short_sell_with_strategy == "1" ? "True" : "False" %>`
+                        + `\n- Close short based on strategy: <%= config.short_buy_with_strategy && config.short_buy_with_strategy == "1" ? "True" : "False" %>`
+                        + `\n- Always short instead of sell: <%= config.short_always && config.short_always == "1" ? "True" : "False" %>`
+                        + `\n- Shorting percentage profit: <%= config.short_percentage_profit %>`
+                        + `\n- Use actual profit: <%= config.short_use_actual_profit && config.short_use_actual_profit == "1" ? "True" : "False" %>`
+                        + `\n- Trailing stop-short: <%= config.short_stop_loss_trailing && config.short_stop_loss_trailing == "1" ? "True" : "False" %>`
+                    + `<% if (config.short_stop_loss_trailing && config.short_stop_loss_trailing == "1") { %>`
+                        + `\n- Trailing stop-short percentage: <%= config.short_stop_loss_trailing_percentage %>`
+                        + `\n- Arm trailing stop-short at: <%= config.short_stop_loss_trailing_arm %>`
+                        + `\n- Use trailing stop-short only: <%= config.short_stop_loss_trailing_only && config.short_stop_loss_trailing_only == "1" ? "True" : "False" %>`
+                    + `<% } %>`
+                    + `\n- Auto close shorts within time: <%= config.short_auto_close_positions && config.short_auto_close_positions == "1" ? "True" : "False" %>`
+                    + `<% if (config.short_auto_close_positions && config.short_auto_close_positions == "1") { %>`
+                        + `\n- Close shorts after X time open: <%= config.short_auto_close_positions_time %>`
+                    + `<% } %>`
+                    + `\n- Auto remove shorts within time: <%= config.short_auto_remove_positions && config.short_auto_remove_positions == "1" ? "True" : "False" %>`
+                    + `<% if (config.short_auto_close_positions && config.short_auto_close_positions == "1") { %>`
+                        + `\n- Remove shorts after X time open: <%= config.short_auto_remove_positions_time %>`
+                    + `<% } %>`
+                    + `\n- Do not buy back on loss: <%= config.short_remove_on_loss && config.short_remove_on_loss == "1" ? "True" : "False" %>`
+                    + `\n- Ignore max open positions: <%= config.short_ignore_max_pos && config.short_ignore_max_pos == "1" ? "True" : "False" %>`
+                    + `<% } %>`
+                    + `\n`
+                    + `\n## Dollar Cost Averaging`
+                    + `\n- Enable: <%= config.auto_dca && config.auto_dca == "1" ? "True" : "False" %>`
+                    + `<% if (config.auto_dca && config.auto_dca == "1") { %>`
+                        + `\n- Order type: <%= config.dca_order_type %>`
+                        + `\n- DCA after X time open: <%= config.auto_dca_time %>`
+                        + `\n- DCA max retries: <%= config.auto_dca_max %>`
+                        + `\n- DCA set percentage trigger: <%= config.auto_dca_percentage %>`
+                        + `\n- DCA buy immediately: <%= config.auto_dca_strategy && config.auto_dca_strategy == "1" ? "True" : "False" %>`
+                        + `\n- DCA order size: <%= config.auto_dca_size %>`
+                        + `<% if (config.auto_dca_size && config.auto_dca_size == "custom") { %>`
+                            + `\n- DCA order size percentage: <%= config.auto_dca_size_custom %>`
+                        + `<% } %>`
+                    + `<% } %>`
+                    + `</pre>`)
+                swal({
+                    title: 'Export',
+                    html: template({strategyName, config, today, options}),
+                    type: '',
+                })
+            } catch (error) {
+                this.displayError(error)
+            }
+        }
+        
+        displayError(error) {
             swal({
-                title: 'Export',
-                html: template({strategyName, config, today, options}),
-                type: '',
-            })
+                title: 'Failed to export configuration',
+                html: `<div>${error}</div>`,
+                type: 'error'
+            });
         }
     }
     jQuery(document).ready(() => new ExportToDiscord())
