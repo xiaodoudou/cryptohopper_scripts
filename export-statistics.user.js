@@ -117,7 +117,7 @@
                         <td class="buy-date"><%= trade.buyTrade.date %></td>
                         <td class="trigger"><%= trade.trigger %></td>
                         <td class="profit <%= trade.profit > 0 ? 'positive' : 'negative' %>"><%= roundFinance(trade.profit) %>$</td>
-                        <td class="result <%= trade.result.search('-') > -1 ? 'negative' : 'positive' %>"><%= trade.result %></td>
+                        <td class="result <%= trade.result.search('-') > -1 ? 'negative' : 'positive' %>"><%= trade.result ? trade.result : "0%" %></td>
                     </tr>
                 <% } %>
             `)
