@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @match        https://www.cryptohopper.com/trade-history
@@ -54,49 +54,192 @@
             }
         }
 
-        async calculate() {
+        scan(data) {
+            let orderedData = _.orderBy(data, 'date')
+            let bags = {}
+            _.forEach(orderedData, (trade) => {
+                if (trade.pair) {
+                    if (_.get(bags, trade.pair, false) == false) {
+                        _.set(bags, trade.pair, {
+                            buys: [],
+                            sells: []
+                        })
+                    }
+                    const currentBags = _.get(bags, trade.pair)
+                    if (!trade.result) {
+                        trade.result = "0%"
+                    }
+                    trade.originalValue = trade.orderValue
+                    trade.date = +new Date(trade.date)
+                    if (trade.type == "buy") {
+                        currentBags.buys.push(trade)
+                    } else {
+                        currentBags.sells.push(trade)
+                    }
+                }
+            })
+            return bags
+        } 
+
+        calculate(data) {
+            let trades = []
+            _.forEach(data, (bags, coins) => {
+                _.forEach(bags.sells, (sell, indexSell) => {
+                    let found = false
+                    const trade = {
+                        currency: sell.currency,
+                        pair: sell.pair,
+                        orderCurrency: sell.orderCurrency,
+                        result: sell.result,
+                        profit: 0,
+                        end: sell.date,
+                        trigger: sell.trigger,
+                        sell: {
+                            date: sell.date,
+                            orderAmount: sell.orderAmount,
+                            orderRate: sell.orderRate,
+                            orderValue: sell.orderValue,
+                            fee: sell.fee,
+                            trigger: sell.trigger,
+                        },
+                        buys: []
+                    }
+                    if (sell.buyOrderId) {
+                        const buy = _.find(bags.buys, (i) => i.id == sell.buyOrderId)
+                        if (buy) {
+                            found = true
+                            const indexBuy = _.indexOf(bags.buys, buy)
+                            delete bags.buys[indexBuy]
+                            bags.buys = _.compact(bags.buys)
+                            trade.buys = [
+                                {
+                                    date: buy.date,
+                                    orderAmount: buy.orderAmount,
+                                    orderRate: buy.orderRate,
+                                    orderValue: buy.orderValue,
+                                    trigger: buy.trigger
+                                }
+                            ]
+                            trade.type = "1:1"
+                            trade.profit = sell.orderValue - buy.orderValue
+                            delete bags.sells[indexSell]
+                            bags.sells = _.compact(bags.sells)
+                            trades.push(trade)
+                        }
+                    }
+                    if (!found) {
+                        let amount = sell.orderAmount
+                        while (amount > 0) {
+                            if (_.filter(bags.buys, (buy) => buy.date < sell.date).length <= 0) {
+                                if (amount > 0) {
+                                    trade.sell.orderAmount = trade.sell.orderAmount - amount
+                                    trade.sell.orderValue = trade.sell.orderRate * trade.sell.orderAmount 
+                                }
+                                break;
+                            }
+                            bags.buys = _.orderBy(bags.buys, 'date')
+                            bags.buys.reverse()
+                            _.forEach(bags.buys, (buy, indexBuy) => {
+                                if (buy.date < sell.date) {
+                                    let orderAmount = buy.orderAmount
+                                    let fee = buy.fee
+                                    let amountUsage =  buy.orderAmount - amount
+                                    let fullyUsed = false
+                                    if (amountUsage == 0) {
+                                        amount = 0
+                                        fullyUsed = true
+                                    } else if (amountUsage > 0) {
+                                        orderAmount = orderAmount - amountUsage
+                                        amount = 0
+                                        fullyUsed = false
+                                    } else {
+                                        fullyUsed = true
+                                        amount = amount - buy.orderAmount
+                                    }
+                                    const orderValue = orderAmount * buy.orderRate + buy.fee
+    
+                                    if (fullyUsed) {
+                                        delete bags.buys[indexBuy]
+                                        bags.buys = _.compact(bags.buys)
+                                    } else {
+                                        const ratio = orderAmount / buy.orderAmount
+                                        buy.orderAmount = buy.orderAmount - orderAmount
+                                        buy.orderValue = buy.orderAmount * buy.orderRate + buy.fee * ratio
+                                    }
+                                    trade.buys.push(
+                                        {
+                                            date: buy.date,
+                                            orderAmount: orderAmount,
+                                            orderRate: buy.orderRate,
+                                            orderValue: orderValue,
+                                            trigger: buy.trigger
+                                        }
+                                    )
+                                    if (amount == 0) {
+                                        return false
+                                    }
+                                }
+                            })
+                        }
+                        if (amount == 0) {
+                            trade.type = trade.buys.length + ":1"
+                            trades.push(trade)
+                        }
+                        delete bags.sells[indexSell]
+                        bags.sells = _.compact(bags.sells)
+                    }
+                })
+            })
+
+            const statistics = {
+                trades: 0,
+                profit: 0,
+                fees: 0,
+                wins: 0,
+                loss: 0,
+                data: []
+            }
+            trades = _.orderBy(trades, 'end')
+            _.forEach(trades, (trade) => {
+                let profit = trade.sell.orderValue
+                trade.end = trade.sell.date
+                trade.start = Infinity
+                _.forEach(trade.buys, (buy) => {
+                    profit = profit - buy.orderValue
+                    if (trade.start > buy.date) {
+                        trade.start = buy.date
+                    }
+                })
+                trade.profit = profit
+                statistics.profit = statistics.profit + profit
+                if (profit > 0) {
+                    statistics.wins = statistics.wins + 1
+                } else {
+                    statistics.loss = statistics.loss + 1
+                }
+                statistics.trades = statistics.trades + 1
+                statistics.data.push(trade)
+                // console.log(new Date(trade.date), trade.pair, profit, trade.sell.fee, trade.result, trade.sell.trigger)
+            })
+            return statistics
+        }
+
+        async generateStatistics() {
             if (this.loading) {
                 return
             }
             try {
                 this.loading = true
-                const statistics = {
-                    trades: 0,
-                    profit: 0,
-                    fees: 0,
-                    wins: 0,
-                    loss: 0,
-                    data: []
-                }
                 this.setLabel(this.labelLoading)
-                const data = await this.getHistory()
-                const tradeArray = this.csvToArray(data)
-                const sellTrades = _.filter(tradeArray, (trade) => trade.type === "sell" && trade.buyOrderId && trade.buyOrderId !== "0")
-                const buyTrades = _.filter(tradeArray, (trade) => trade.type === "buy")
-                _.forEach(sellTrades, (sellTrade) => {
-                    sellTrade.buyTrade = _.find(buyTrades, (buyTrade) => buyTrade.id === sellTrade.buyOrderId)
-                })
-                console.log("HERE", sellTrades)
-                _.forEach(sellTrades, (sellTrade) => {
-                    const buyTrade = _.get(sellTrade, 'buyTrade', false)
-                    if (buyTrade !== false) {
-                        sellTrade.totalFee = Number(sellTrade.fee) + Number(buyTrade.fee)
-                        sellTrade.profit = Number(sellTrade.orderValue) - Number(buyTrade.orderValue)
-                        statistics.trades = statistics.trades + 1
-                        statistics.profit = statistics.profit + sellTrade.profit
-                        statistics.fees = statistics.trades + sellTrade.totalFee
-                        if (sellTrade.result.search("-") >= 0) {
-                            statistics.loss = statistics.loss + 1
-                        } else {
-                            statistics.wins = statistics.wins + 1
-                        }
-                        statistics.data.push(sellTrade)
-                    }
-                })
-                statistics.data = _.orderBy(statistics.data, ['date'])
+                let data = await this.getHistory()
+                data = this.csvToArray(data)
+                const bags = this.scan(data)
+                const statistics = this.calculate(bags)
+                statistics.data = _.orderBy(statistics.data, 'end')
                 statistics.data.reverse()
                 this.displayStatistics(statistics)
             } catch (error) {
+                console.error(error)
                 this.displayError(error)
             }
             this.loading = false
@@ -113,9 +256,10 @@
                 <% for (trade of statistics.data) { %>
                     <tr class="row">
                         <td class="coin"><%= trade.currency %></td>
-                        <td class="sell-date"><%= trade.date %></td>
-                        <td class="buy-date"><%= trade.buyTrade.date %></td>
+                        <td class="sell-date"><%= moment(trade.end).format("DD/MM/YYYY hh:mm A") %></td>
+                        <td class="buy-date"><%= moment(trade.start).format("DD/MM/YYYY hh:mm A") %></td>
                         <td class="trigger"><%= trade.trigger %></td>
+                        <td class="type"><%= trade.type %></td>
                         <td class="profit <%= trade.profit > 0 ? 'positive' : 'negative' %>"><%= roundFinance(trade.profit) %>$</td>
                         <td class="result <%= trade.result.search('-') > -1 ? 'negative' : 'positive' %>"><%= trade.result ? trade.result : "0%" %></td>
                     </tr>
@@ -153,12 +297,13 @@
                                         <th class="sell">Sell At</th>
                                         <th class="buy">Buy At</th>
                                         <th class="triger">Trigger</th>
+                                        <th class="type">Type</th>
                                         <th class="profit">Profit</th>
                                         <th class="result">Result</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${template({ statistics, roundFinance: this.roundFinance })}
+                                    ${template({ statistics, roundFinance: this.roundFinance, moment })}
                                 </tbobdy>
                             </table>
                         </div>`
@@ -192,7 +337,7 @@
             buttonClosePanel.on('click', () => jQuery("div#export-statistics").toggle())
             const buttonExport = jQuery('<button class="btn btn-primary waves-effect waves-light"><i class="fa fa-download m-r-5"></i></button>')
             jQuery(buttonExport).append(this.labelHandle)
-            buttonExport.on('click', async () => await this.calculate())
+            buttonExport.on('click', async () => await this.generateStatistics())
             const panel = jQuery(`<div class="row" id="export-statistics" style="display:none;">
                                     <div class="col-lg-12">
                                         <div class="card-box m-b-15">
@@ -290,6 +435,7 @@
         table.statistics .buy-date,
         table.statistics .sell-date,
         table.statistics .trigger,
+        table.statistics .type,
         table.statistics .coin {
             text-align: left;
         }
