@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @match        https://www.cryptohopper.com/trade-history
@@ -109,22 +109,42 @@
                         if (buy) {
                             found = true
                             const indexBuy = _.indexOf(bags.buys, buy)
-                            delete bags.buys[indexBuy]
-                            bags.buys = _.compact(bags.buys)
-                            trade.buys = [
-                                {
-                                    date: buy.date,
-                                    orderAmount: buy.orderAmount,
-                                    orderRate: buy.orderRate,
-                                    orderValue: buy.orderValue,
-                                    trigger: buy.trigger
+                            if (sell.orderAmount <= buy.orderAmount ) {
+                                if (sell.orderAmount == buy.orderAmount) {
+                                    delete bags.buys[indexBuy]
+                                    bags.buys = _.compact(bags.buys)
+                                    trade.type = "1:1"
+                                    trade.buys = [
+                                        {
+                                            date: buy.date,
+                                            orderAmount: buy.orderAmount,
+                                            orderRate: buy.orderRate,
+                                            orderValue: buy.orderValue,
+                                            trigger: buy.trigger
+                                        }
+                                    ]
+                                    trade.profit = sell.orderValue - buy.orderValue
+                                    delete bags.sells[indexSell]
+                                    bags.sells = _.compact(bags.sells)
+                                } else {
+                                    trade.type = "1:1*"
+                                    trade.buys = [
+                                        {
+                                            date: buy.date,
+                                            orderAmount: sell.orderAmount,
+                                            orderRate: buy.orderRate,
+                                            orderValue: sell.orderAmount * buy.orderRate,
+                                            trigger: buy.trigger
+                                        }
+                                    ]
+                                    trade.profit = sell.orderValue - sell.orderAmount * buy.orderRate
+                                    buy.orderAmount = buy.orderAmount - sell.orderAmount
+                                    buy.orderValue = buy.orderAmount * buy.orderRate
                                 }
-                            ]
-                            trade.type = "1:1"
-                            trade.profit = sell.orderValue - buy.orderValue
-                            delete bags.sells[indexSell]
-                            bags.sells = _.compact(bags.sells)
-                            trades.push(trade)
+                                trades.push(trade)
+                            } else {
+                                found = false
+                            }
                         }
                     }
                     if (!found) {
