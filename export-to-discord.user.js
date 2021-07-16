@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Export Configuration
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      1.0.0
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @updateURL    https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-to-discord.user.js
