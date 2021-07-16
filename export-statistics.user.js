@@ -249,15 +249,14 @@
             })
             statistics.duration =  this.durationWithPadding(statistics.duration / trades.length)
             statistics.averageProfit = statistics.averageProfit / trades.length
-            console.warn(statistics)
             return statistics
         }
 
         durationWithPadding(n) {
-            console.warn('duration', n)
             var momentInSeconds = moment.duration(n / 1000,'seconds')
             return "0" + `${Math.floor(momentInSeconds.asHours())}`.slice(-2) + ':' + ("0" + `${momentInSeconds.minutes()}`).slice(-2) + ':' + ("0" + `${momentInSeconds.seconds()}`).slice(-2)
         }
+        
         async generateStatistics() {
             if (this.loading) {
                 return
