@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @match        https://www.cryptohopper.com/trade-history
@@ -217,6 +217,8 @@
                 fees: 0,
                 wins: 0,
                 loss: 0,
+                duration: 0,
+                averageProfit: 0,
                 data: []
             }
             trades = _.orderBy(trades, 'end')
@@ -230,20 +232,32 @@
                         trade.start = buy.date
                     }
                 })
+                trade.duration = trade.end - trade.start
                 trade.profit = profit
                 statistics.profit = statistics.profit + profit
+                statistics.averageProfit = statistics.averageProfit + trade.profit
                 if (profit > 0) {
                     statistics.wins = statistics.wins + 1
                 } else {
                     statistics.loss = statistics.loss + 1
                 }
+                statistics.duration = statistics.duration + trade.duration
+                trade.duration = this.durationWithPadding(trade.duration)
                 statistics.trades = statistics.trades + 1
                 statistics.data.push(trade)
                 // console.log(new Date(trade.date), trade.pair, profit, trade.sell.fee, trade.result, trade.sell.trigger)
             })
+            statistics.duration =  this.durationWithPadding(statistics.duration / trades.length)
+            statistics.averageProfit = statistics.averageProfit / trades.length
+            console.warn(statistics)
             return statistics
         }
 
+        durationWithPadding(n) {
+            console.warn('duration', n)
+            var momentInSeconds = moment.duration(n / 1000,'seconds')
+            return "0" + `${Math.floor(momentInSeconds.asHours())}`.slice(-2) + ':' + ("0" + `${momentInSeconds.minutes()}`).slice(-2) + ':' + ("0" + `${momentInSeconds.seconds()}`).slice(-2)
+        }
         async generateStatistics() {
             if (this.loading) {
                 return
@@ -278,6 +292,7 @@
                         <td class="coin"><%= trade.currency %></td>
                         <td class="sell-date"><%= moment(trade.end).format("DD/MM/YYYY hh:mm A") %></td>
                         <td class="buy-date"><%= moment(trade.start).format("DD/MM/YYYY hh:mm A") %></td>
+                        <td class="duration"><%= trade.duration %></td>
                         <td class="trigger"><%= trade.trigger %></td>
                         <td class="type"><%= trade.type %></td>
                         <td class="profit <%= trade.profit > 0 ? 'positive' : 'negative' %>"><%= roundFinance(trade.profit) %>$</td>
@@ -300,7 +315,7 @@
                                         <span class="label label-primary">Trades:</span> ${statistics.trades}
                                     </div>
                                     <div>
-                                        <span class="label label-primary">Profit:</span> <span class="${statistics.profit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.profit)}$</span>
+                                        <span class="label label-primary">Average Profit:</span> <span class="${statistics.averageProfit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.averageProfit) * 100}%</span>
                                     </div>
                                     <div>
                                         <span class="label label-success">Wins:</span> ${statistics.wins}
@@ -309,6 +324,14 @@
                                         <span class="label label-danger">Loss:</span> ${statistics.loss}
                                     </div>
                                 </div>
+                                <div class="row">
+                                <div>
+                                    <span class="label label-primary">Average Duration:</span> ${statistics.duration}
+                                </div>
+                                <div>
+                                    <span class="label label-primary">Profit:</span> <span class="${statistics.profit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.profit)}$</span>
+                                </div>
+                            </div>
                             </div>
                             <table class="statistics">
                                 <thead>
@@ -316,6 +339,7 @@
                                         <th class="coin">Coin</th>
                                         <th class="sell">Sell At</th>
                                         <th class="buy">Buy At</th>
+                                        <th class="dureation">Duration</th>
                                         <th class="triger">Trigger</th>
                                         <th class="type">Type</th>
                                         <th class="profit">Profit</th>
@@ -424,6 +448,7 @@
             flex-direction: column;
             justify-content: space-around;
             font-size: 12px;
+            padding-bottom: 10px;
         }
         div.statistics-sumup .row {
             display: flex;
