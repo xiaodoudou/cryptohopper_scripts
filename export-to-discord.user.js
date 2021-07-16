@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         Export Configuration
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.1.1
 // @description  try to take over the world!
 // @author       Xiaodoudou
+// @updateURL    https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-to-discord.user.js
+// @downloadURL  https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-to-discord.user.js
 // @match        https://www.cryptohopper.com/config
 // @icon         https://www.google.com/s2/favicons?domain=cryptohopper.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
