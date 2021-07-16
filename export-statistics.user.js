@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.4.1
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @match        https://www.cryptohopper.com/trade-history
@@ -256,7 +256,7 @@
             var momentInSeconds = moment.duration(n / 1000,'seconds')
             return "0" + `${Math.floor(momentInSeconds.asHours())}`.slice(-2) + ':' + ("0" + `${momentInSeconds.minutes()}`).slice(-2) + ':' + ("0" + `${momentInSeconds.seconds()}`).slice(-2)
         }
-        
+
         async generateStatistics() {
             if (this.loading) {
                 return
@@ -314,7 +314,7 @@
                                         <span class="label label-primary">Trades:</span> ${statistics.trades}
                                     </div>
                                     <div>
-                                        <span class="label label-primary">Average Profit:</span> <span class="${statistics.averageProfit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.averageProfit) * 100}%</span>
+                                        <span class="label label-primary">Average Profit:</span> <span class="${statistics.averageProfit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.averageProfit* 100) }%</span>
                                     </div>
                                     <div>
                                         <span class="label label-success">Wins:</span> ${statistics.wins}
