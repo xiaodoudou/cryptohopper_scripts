@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @updateURL    https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-statistics.user.js
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?domain=cryptohopper.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js
 // @require      https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.2.0/dom-to-image.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js
 // @grant        GM_addStyle
 // ==/UserScript==
 (function() {
@@ -308,7 +308,7 @@
                             <div class="statistics-sumup">
                                 <div class="row">
                                     <div>
-                                        <span>Date Range:</span> ${dateRange} (Timezone ${timezoneOffset()})
+                                        <span>Range:</span> ${dateRange} (Timezone ${timezoneOffset()})
                                     </div>
                                 </div>
                                 <div class="row">
@@ -354,13 +354,19 @@
                         </div>`
                 });
                 if ($("#statistics-save-to-png").is(':checked')) {
-                    domtoimage.toPng(jQuery('#modal-statistics').parent().parent()[0])
-                    .then(function (dataUrl) {
-                        const link = document.createElement('a');
-                        link.download = +new Date() + '-modal-statistics.png',
-                        link.href = dataUrl;
-                        link.click()
-                    })
+                    setTimeout(async () => {
+                        try {
+                            const canvas = await html2canvas(jQuery('#modal-statistics').parent().parent()[0], {
+                                backgroundColor: null
+                            })
+                            const link = document.createElement('a');
+                            link.download = +new Date() + '-modal-statistics.png'
+                            link.href = canvas.toDataURL("image/png");
+                            link.click()
+                        } catch (error) {
+                            console.error('Failed to generate png:', error)
+                        }
+                    }, 10)
                 }
         }
 
@@ -438,16 +444,11 @@
     jQuery(() => {
         GM_addStyle(`
         #modal-statistics {
-            background: white;
             position: relative;
             padding: 0 0 10px 0;
         }
         div.statistics-sumup {
-            display: flex;
             width: 100%;
-            align-items: center;
-            flex-direction: column;
-            justify-content: space-around;
             font-size: 12px;
             padding-bottom: 10px;
         }
