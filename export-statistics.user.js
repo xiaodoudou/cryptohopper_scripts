@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  try to take over the world!
 // @author       Xiaodoudou
 // @updateURL    https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-statistics.user.js
@@ -357,7 +357,9 @@
                     setTimeout(async () => {
                         try {
                             const canvas = await html2canvas(jQuery('#modal-statistics').parent().parent()[0], {
-                                backgroundColor: null
+                                backgroundColor: _.includes(document.body.classList, 'nightmode') ? "rgb(48, 48, 84)" : "white",
+                                windowWidth: 2560,
+                                imageTimeout: 0
                             })
                             const link = document.createElement('a');
                             link.download = +new Date() + '-modal-statistics.png'
