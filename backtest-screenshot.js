@@ -66,7 +66,9 @@
             const screenshotSetting = document.querySelector('#screenshot')
             screenshotSetting.checked = GM_getValue("backtest-screenshot", false)
             screenshotSetting.onchange = () => GM_setValue("backtest-screenshot", screenshotSetting.checked)
-            new Switchery(screenshotSetting)
+            new Switchery(screenshotSetting, {
+                color: "rgb(6, 204, 152)"
+            })
         }
     }
     jQuery(document).ready(() => new BacktestScreenshot());
