@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Backtest - Screenshot
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.3
 // @description  Take automatically a screenshot for the backtest
 // @author       You
 // @match        https://www.cryptohopper.com/backtesting
