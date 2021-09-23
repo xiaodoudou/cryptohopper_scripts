@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Backtest - Screenshot
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  Take automatically a screenshot for the backtest
-// @author       You
+// @author       Xiaodoudou
 // @match        https://www.cryptohopper.com/backtesting
-// @icon         https://www.google.com/s2/favicons?domain=cryptohopper.com
-// @match        https://www.cryptohopper.com/trade-history
+// @updateURL    https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/backtest-screenshot.user.js
+// @downloadURL  https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/backtest-screenshot.user.js
 // @icon         https://www.google.com/s2/favicons?domain=cryptohopper.com
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js
 // @require      https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
