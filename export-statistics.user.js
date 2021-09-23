@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Trade History - Export Statistics
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
-// @description  try to take over the world!
+// @version      1.0.3
+// @description  Export statistics from history
 // @author       Xiaodoudou
 // @updateURL    https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-statistics.user.js
 // @downloadURL  https://github.com/xiaodoudou/cryptohopper_scripts/raw/main/export-statistics.user.js
@@ -12,6 +12,8 @@
 // @require      https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js
 // @grant        GM_addStyle
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 (function() {
     'use strict';
@@ -236,8 +238,8 @@
                 })
                 trade.duration = trade.end - trade.start
                 trade.profit = profit
-                statistics.profit = statistics.profit + profit
-                statistics.averageProfit = statistics.averageProfit + trade.profit
+                statistics.profit = statistics.profit + trade.profit
+                statistics.averageProfit = statistics.averageProfit + Number(trade.result.replace(/[\ |\%]/g,""))
                 if (profit > 0) {
                     statistics.wins = statistics.wins + 1
                 } else {
@@ -316,7 +318,7 @@
                                         <span class="label label-primary">Trades:</span> ${statistics.trades}
                                     </div>
                                     <div>
-                                        <span class="label label-primary">Average Profit:</span> <span class="${statistics.averageProfit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.averageProfit* 100) }%</span>
+                                        <span class="label label-primary">Average Profit:</span> <span class="${statistics.averageProfit > 0 ? 'positive' : 'negative'}">${this.roundFinance(statistics.averageProfit) }%</span>
                                     </div>
                                     <div>
                                         <span class="label label-success">Wins:</span> ${statistics.wins}
@@ -431,6 +433,9 @@
             })
             jQuery(panelTarget).append(buttonClosePanel)
             jQuery(panelTarget).append(buttonExport)
+            const screenshotSetting = document.querySelector('#statistics-save-to-png')
+            screenshotSetting.checked = GM_getValue("export-stats-screenshot", true)
+            screenshotSetting.onchange = () => GM_setValue("export-stats-screenshot", screenshotSetting.checked)
         }
         async getHistory() {
             try {
